@@ -1,0 +1,26 @@
+{% extends "layout.html.twig" %}
+
+{% set showSearchDesc = 'hide' %}
+
+{% block head_additions %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block title %}{{ 'packages.security_advisory_title'|trans }} - {{ name }} - {{ parent() }}{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-xs-12 package">
+            <div class="package-header">
+                <h2 class="title">
+                    <a href="{{ path("view_package", {name: name}) }}">{{ name }}</a>
+                    {{ 'packages.security_advisories'|trans }}
+                    {% if version is defined %}
+                        for {{ version }}
+                    {% endif %}
+                    <small>({{ count }})</small>
+                </h2>
+            </div>
+        </div>
+    </div>
+
+    {% include 'package/_security_advisory_list.html.twig' %}
+{% endblock %}

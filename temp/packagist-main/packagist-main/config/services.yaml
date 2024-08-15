@@ -1,0 +1,122 @@
+# This file is the entry point to configure your own services.
+# Files in the packages/ subdirectory configure your dependencies.
+
+# Put parameters here that don't need to change on each machine where the app is deployed
+# https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
+parameters:
+    # default params which can be overriden by config/parameters.yaml
+    force_ssl: false
+    forced_ssl_hosts: []
+    aws_metadata: []
+    packagist_metadata_dir: '%kernel.cache_dir%/composer-packages-build'
+    packagist_dumper_compress: 0
+    trusted_ip_header: ''
+    github.webhook_secret: '%env(APP_GITHUB_WEBHOOK_SECRET)%'
+    fallback_gh_tokens: []
+
+services:
+    # default configuration for services in *this* file
+    _defaults:
+        autowire: true      # Automatically injects dependencies in your services.
+        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+        bind:
+            # services
+            $redis: '@snc_redis.default'
+            $redisCache: '@snc_redis.cache'
+            $recaptchaVerifier: "@beelab_recaptcha2.verifier"
+            'Monolog\Logger': '@logger'
+            'Symfony\Contracts\EventDispatcher\EventDispatcherInterface $mainEventDispatcher': '@security.event_dispatcher.main'
+            'Symfony\Component\Security\Http\Logout\LogoutUrlGenerator': '@security.logout_url_generator'
+
+            # params
+            $dbUrl: '%env(DATABASE_URL)%'
+            $awsMetadata: '%aws_metadata%'
+            $cacheDir: '%kernel.cache_dir%'
+            $webDir: '%kernel.project_dir%/web/'
+            $metadataDir: '%packagist_metadata_dir%'
+            $trustedIpHeader: '%trusted_ip_header%'
+            $algoliaIndexName: '%env(ALGOLIA_INDEX_NAME)%'
+            $githubWebhookSecret: '%env(APP_GITHUB_WEBHOOK_SECRET)%'
+            $recaptchaEnabled: "%env(bool:APP_RECAPTCHA_ENABLED)%"
+            $mailFromEmail: "%env(APP_MAILER_FROM_EMAIL)%"
+            $mailFromName: "%env(APP_MAILER_FROM_NAME)%"
+            $fallbackGhTokens: "%fallback_gh_tokens%"
+            $configDir: '%kernel.project_dir%/config/'
+
+    # makes classes in src/ available to be used as services
+    # this creates a service per class whose id is the fully-qualified class name
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/DependencyInjection/'
+            - '../src/Entity/'
+            - '../src/Kernel.php'
+            - '../src/Tests/'
+
+    # controllers are imported separately to make sure services can be injected
+    # as action arguments even if you don't extend any base controller class
+    App\Controller\:
+        resource: '../src/Controller/'
+        tags: ['controller.service_arguments']
+
+    # add more service definitions when explicit configuration is needed
+    # please note that last definitions always *replace* previous ones
+
+    App\Entity\:
+        resource: '../src/Entity/*Repository.php'
+
+    Graze\DogStatsD\Client: ~
+
+    App\ArgumentResolver\:
+        resource: '../src/ArgumentResolver/*.php'
+        tags:
+            - { name: controller.argument_value_resolver, priority: 115 } # Put these above doctrine.orm.entity_value_resolver (110) but below user_value_resolver (120)
+
+    App\Package\SymlinkDumper:
+        $buildDir: '%packagist_metadata_dir%'
+        $compress: '%packagist_dumper_compress%'
+
+    App\Package\V2Dumper:
+        $buildDir: '%packagist_metadata_dir%'
+
+    App\Controller\PackageController:
+        $buildDir: '%packagist_metadata_dir%'
+
+    App\Model\PackageManager:
+        $options: { from: '%env(APP_MAILER_FROM_EMAIL)%', fromName: '%env(APP_MAILER_FROM_NAME)%' }
+
+    packagist.menu.user:
+        class: Knp\Menu\MenuItem
+        factory: ['@App\Menu\MenuBuilder', createUserMenu]
+        tags:
+            - { name: knp_menu.menu, alias: user_menu }
+
+    packagist.menu.profile:
+        class: Knp\Menu\MenuItem
+        factory: ['@App\Menu\MenuBuilder', createProfileMenu]
+        tags:
+            - { name: knp_menu.menu, alias: profile_menu }
+
+    Algolia\AlgoliaSearch\SearchClient:
+        arguments: ['%env(ALGOLIA_APP_ID)%', '%env(ALGOLIA_ADMIN_KEY)%']
+        factory: ['Algolia\AlgoliaSearch\SearchClient', create]
+
+    App\Service\QueueWorker:
+        $jobWorkers:
+            'package:updates': '@App\Service\UpdaterWorker'
+            'githubuser:migrate': '@App\Service\GitHubUserMigrationWorker'
+            'security:advisory': '@App\Service\SecurityAdvisoryWorker'
+
+    App\Security\TwoFactorAuthManager:
+        public: true
+        class: App\Security\TwoFactorAuthManager
+
+    App\Service\SecurityAdvisoryWorker:
+        $sources:
+            'FriendsOfPHP/security-advisories': '@App\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource'
+            'GitHub': '@App\SecurityAdvisory\GitHubSecurityAdvisoriesSource'
+
+    Symfony\Component\HttpFoundation\Session\Storage\Handler\RedisSessionHandler:
+        arguments: ['@snc_redis.cache', {prefix: 'sess:', ttl: 3600}]
+
+    Symfony\Component\HttpClient\NoPrivateNetworkHttpClient: ~

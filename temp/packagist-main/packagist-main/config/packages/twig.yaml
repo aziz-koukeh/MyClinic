@@ -1,0 +1,19 @@
+twig:
+    default_path: '%kernel.project_dir%/templates'
+    debug: '%kernel.debug%'
+    strict_variables: '%kernel.debug%'
+    exception_controller: null
+    form_themes:
+        - 'forms.html.twig'
+    globals:
+        packagist_host: '%env(APP_HOSTNAME)%'
+        recaptcha_site_key: '%env(APP_RECAPTCHA_SITE_KEY)%'
+        algolia:
+          app_id: '%env(ALGOLIA_APP_ID)%'
+          search_key: '%env(ALGOLIA_SEARCH_KEY)%'
+          index_name: '%env(ALGOLIA_INDEX_NAME)%'
+    file_name_pattern: '*.twig'
+
+when@test:
+    twig:
+        strict_variables: true

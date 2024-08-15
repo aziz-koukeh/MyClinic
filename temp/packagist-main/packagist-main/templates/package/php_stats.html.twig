@@ -1,0 +1,67 @@
+{% extends "package/stats_base.html.twig" %}
+
+{% block title %}PHP Version Stats - {{ package.name }} - {{ parent() }}{% endblock %}
+
+{% block content %}
+    {{ parent() }}
+
+    {% if not versions %}
+        <div class="row">
+            <div class="col-xs-12 package">
+                <p>There are no download statistics available for this package yet.</p>
+            </div>
+        </div>
+    {% else %}
+        <section class="row package-installs">
+            <div class="col-lg-12">
+                <div class="row package version-stats">
+                    <div class="col-xs-12 col-md-9 version-stats-chart">
+                        <div style="position: relative">
+                            <svg class="chart js-version-dls" width="500" height="200">
+                                Sorry, the graph can't be displayed because your browser doesn't support &lt;svg&gt; html element.
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="col-md-3 no-padding">
+                        <div class="package-aside versions-wrapper">
+                            <ul class="versions">
+                                {% set lastDepth = '' %}
+                                {% for version in versions %}
+                                    {% set expanded = version.version is same as expandedVersion %}
+                                    {% if lastDepth != '' and lastDepth != version.depth %}
+                                        <span class="group-separator"></span>
+                                    {% endif %}
+                                    <li class="details-toggler version{% if loop.last %} last{% endif %}{% if expanded %} open{% endif %}" data-version-id="{{ version.version }}">
+                                        <a href="#{{ version.version }}" class="version-number">
+                                            {{- version.label }}
+                                        </a>
+                                    </li>
+                                    {% set lastDepth = version.depth %}
+                                {% endfor %}
+                            </ul>
+                            <div class="hidden versions-expander">
+                                <i class="glyphicon glyphicon-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    {% endif %}
+{% endblock %}
+
+{% block stylesheets %}
+    <link rel="stylesheet" href="{{ asset('build/charts.css') }}" />
+{% endblock %}
+
+{% block scripts %}
+    <script nonce="{{ csp_nonce('script') }}" src="{{ asset('build/charts.js') }}"></script>
+    <script nonce="{{ csp_nonce('script') }}">
+        (function () {
+            var average = {{ average|json_encode|raw }};
+            var date = {{ date|json_encode|raw }};
+
+            initPhpStats(average, date, {{ path('version_php_stats', {name: package.name, version: '_VERSION_', type: 'effective'})|replace({effective: '_TYPE_'})|json_encode|raw }});
+        }());
+    </script>
+{% endblock %}

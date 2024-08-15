@@ -1,0 +1,49 @@
+name: "Continuous Integration"
+
+on:
+  - push
+  - pull_request
+
+env:
+  APP_ENV: test
+  DATABASE_URL: "mysql://root:root@127.0.0.1:3306/packagist?serverVersion=8.0"
+
+jobs:
+  tests:
+    name: "CI"
+
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: "Checkout"
+        uses: "actions/checkout@v4"
+
+      - name: "Install PHP"
+        uses: "shivammathur/setup-php@v2"
+        with:
+          coverage: "none"
+          extensions: "intl, zip, apcu"
+          php-version: "8.3"
+          tools: composer
+          ini-values: apc.enable_cli=1
+
+      - name: "Start MySQL"
+        run: sudo systemctl start mysql.service
+
+      - name: "Install dependencies"
+        uses: "ramsey/composer-install@v3"
+        with:
+            composer-options: "--ansi --no-interaction --no-progress --prefer-dist"
+
+      - name: Start Redis
+        uses: supercharge/redis-github-action@1.8.0
+        with:
+          redis-version: 6
+
+      - name: "Setup DB"
+        run: |
+          bin/console doctrine:database:create -n
+          bin/console doctrine:schema:create -n
+
+      - name: "Run tests"
+        run: "composer test"

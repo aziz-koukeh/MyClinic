@@ -1,0 +1,60 @@
+# run with: bin/phpstan analyse
+
+includes:
+    - phpstan-baseline.neon
+    - vendor/phpstan/phpstan-doctrine/extension.neon
+    - vendor/phpstan/phpstan-doctrine/rules.neon
+    - vendor/phpstan/phpstan-symfony/extension.neon
+    - vendor/phpstan/phpstan-symfony/rules.neon
+    - vendor/phpstan/phpstan-webmozart-assert/extension.neon
+    - vendor/staabm/phpstan-dba/config/dba.neon
+    - vendor/phpstan/phpstan-deprecation-rules/rules.neon
+
+parameters:
+    level: 8
+    checkExplicitMixedMissingReturn: true
+
+    treatPhpDocTypesAsCertain: false
+    reportUnmatchedIgnoredErrors: true
+
+    paths:
+        - src/
+
+    symfony:
+        containerXmlPath: var/cache/dev/App_KernelDevDebugContainer.xml
+        consoleApplicationLoader: tests/console-application.php
+
+    scanDirectories:
+#        - var/cache/dev/Symfony/Config
+
+    bootstrapFiles:
+        - phpstan-bootstrap.php
+
+    doctrine:
+        objectManagerLoader: tests/object-manager.php
+
+    ignoreErrors:
+        # https://github.com/phpstan/phpstan-doctrine/issues/176
+        - '~Property App\\Entity\\Dependent::\$type type mapping mismatch: database can contain int but property expects~'
+        - '~Property App\\Entity\\PhpStat::\$type type mapping mismatch: database can contain int but property expects~'
+        - '~Property App\\Entity\\PhpStat::\$depth type mapping mismatch: database can contain int but property expects~'
+        - '~Property App\\Entity\\Job::\$status type mapping mismatch: database can contain string but property expects~'
+
+    typeAliases:
+        AwsMetadata: 'array{}|array{ec2_node: string, ip: string, region: string, primary: bool, has_instance_store: bool, is_worker: bool, is_web: bool}'
+
+        VersionData: 'array<int, array{require: VersionDataLinks, devRequire: VersionDataLinks, suggest: VersionDataLinks, conflict: VersionDataLinks, provide: VersionDataLinks, replace: VersionDataLinks, tags: list<string>}>'
+        VersionDataLinks: 'array<array{version_id: int, name: string, version: string}>'
+
+        ExistingVersionsForUpdate: 'array<string, array{id: int, version: string, normalizedVersion: string, source: PackageSource, softDeletedAt: string|null}>'
+
+        PackageAutoloadRules: 'array{psr-0?: array<string, string|string[]>, psr-4?: array<string, string|string[]>, classmap?: list<string>, files?: list<string>, exclude-from-classmap?: list<string>}'
+        PackageDist: 'array{url: string|null, type: string|null, reference: string|null, shasum: string|null}|null'
+        PackageSource: 'array{url: string|null, type: string|null, reference: string|null}|null'
+
+        AnyJob: 'array<string, bool|int|string>'
+        PackageUpdateJob: 'array{id: int, update_equal_refs: bool, delete_before: bool, force_dump: bool}'
+        GitHubUserMigrateJob: 'array{id: int, old_scope: string, new_scope: string}'
+        SecurityAdvisoryJob: 'array{source: string}'
+        # TODO maybe split those results per class as well instead of this cobbled up mess
+        JobResult: 'array{status: \App\Entity\Job::STATUS_*, message?: string, after?: \DateTimeInterface, details?: string, exception?: \Throwable, exceptionMsg?: string, exceptionClass?: class-string<\Throwable>, results?: array<mixed>, vendor?: string}'

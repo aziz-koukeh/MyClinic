@@ -1,0 +1,21 @@
+services:
+    # default configuration for services in *this* file
+    _defaults:
+        autowire: true      # Automatically injects dependencies in your services.
+        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+        bind:
+            # services
+            $redis: '@snc_redis.default'
+
+    App\Service\Scheduler:
+        public: true
+
+    Algolia\AlgoliaSearch\SearchClient:
+        public: true
+        factory: ['Algolia\AlgoliaSearch\SearchClient', create]
+
+    # stub to replace 2FA code generation
+    App\Tests\Mock\TotpAuthenticatorStub:
+        arguments:
+            $totpFactory: '@scheb_two_factor.security.totp_factory'
+    Scheb\TwoFactorBundle\Security\TwoFactor\Provider\Totp\TotpAuthenticatorInterface: '@App\Tests\Mock\TotpAuthenticatorStub'

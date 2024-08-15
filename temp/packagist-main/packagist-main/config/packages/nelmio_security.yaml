@@ -1,0 +1,42 @@
+nelmio_security:
+    clickjacking:
+        paths:
+            '^/.*': DENY
+    forced_ssl:
+        enabled: '%force_ssl%'
+        hosts: '%forced_ssl_hosts%'
+        hsts_max_age: 31104000 # 1y
+    csp:
+        enabled: true
+        report_logger_service: logger
+        hosts: []
+        content_types: []
+        enforce:
+            browser_adaptive:
+                enabled: false
+            default-src:
+                - 'self'
+            script-src:
+                - 'unsafe-eval' # TODO get rid of this, but it requires getting rid of hogan (part of instantsearch, maybe upgrade to v4 will fix this)
+                - 'https://www.gstatic.com/recaptcha/' # TODO could be replaced by simply 'https:' for simplicity's sake once strict-dynamic support is more broadly available 75% in early 2022 per https://caniuse.com/?search=csp%20strict-dynamic
+                - 'strict-dynamic'
+            connect-src:
+                - 'self'
+                - 'https://*.algolia.net'
+                - 'https://*.algolianet.com'
+            img-src:
+                - 'self'
+                - 'https:'
+                - 'data:'
+            object-src:
+                - 'none'
+            style-src:
+                - 'self'
+                - 'unsafe-inline'
+            font-src:
+                - 'self'
+            frame-src:
+                - 'https://www.google.com/recaptcha/'
+            base-uri:
+                - 'none'
+            block-all-mixed-content: true # defaults to false, blocks HTTP content over HTTPS transport

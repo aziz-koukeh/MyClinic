@@ -1,0 +1,59 @@
+{% extends "web/stats_base.html.twig" %}
+
+{% block title %}Install Statistics - {{ parent() }}{% endblock %}
+
+{% block content %}
+    {{ parent() }}
+
+    <section class="row">
+        <div class="col-lg-12">
+            <h3>{{ 'statistics.over_time'|trans }}</h3>
+
+            <p class="row">
+                <svg class="chart col-xs-12" width="500" height="200" data-labels="{{ chart.months|join(',') }}" data-scale="1000" data-values="{{ 'statistics.versions'|trans }}:{{ chart.versions|join(',') }}|{{ 'statistics.packages'|trans }}:{{ chart.packages|join(',') }}">
+                    Sorry, the graph can't be displayed because your browser doesn't support &lt;svg&gt; html element.
+                </svg>
+            </p>
+            <p>{{ 'statistics.last_partial'|trans }}</p>
+
+            {% if downloadsChart %}
+                <h3>{{ 'statistics.last_month'|trans }}</h3>
+                <p class="row">
+                    <svg class="chart col-xs-12" width="500" height="200" data-labels="{{ downloadsChart.labels|join(',') }}" data-scale="1000" data-values="{{ 'statistics.installs'|trans }}:{{ downloadsChart.values|join(',') }}">
+                        Sorry, the graph can't be displayed because your browser doesn't support &lt;svg&gt; html element.
+                    </svg>
+                </p>
+                <p>{{ 'statistics.last_partial_day'|trans }}</p>
+            {% endif %}
+            {% if downloadsChartMonthly %}
+                <h3>{{ 'statistics.monthly'|trans }}</h3>
+                <p class="row">
+                    <svg class="chart col-xs-12" width="500" height="200" data-labels="{{ downloadsChartMonthly.labels|join(',') }}" data-scale="1000000" data-values="{{ 'statistics.installs'|trans }}:{{ downloadsChartMonthly.values|join(',') }}">
+                        Sorry, the graph can't be displayed because your browser doesn't support &lt;svg&gt; html element.
+                    </svg>
+                </p>
+                <p>{{ 'statistics.last_partial'|trans }}</p>
+            {% endif %}
+
+            <h3>{{ 'statistics.totals'|trans }}</h3>
+            <dl class="dl-horizontal">
+                <dt class="font-normal">{{ 'statistics.registered'|trans }}</dt>
+                <dd class="font-normal">{{ packages|number_format(0, '.', "&#8201;")|raw }}</dd>
+
+                <dt class="font-normal">{{ 'statistics.versions_avail'|trans }}</dt>
+                <dd class="font-normal">{{ versions|number_format(0, '.', "&#8201;")|raw }}</dd>
+
+                <dt class="font-normal">{{ 'statistics.installed'|trans }}<br><small>({{ 'statistics.since'|trans }} {{ downloadsStartDate }})</small></dt>
+                <dd class="font-normal">{% if downloads == 'N/A' %}{{ downloads }}{% else %}{{ downloads|number_format(0, '.', "&#8201;")|raw }}{% endif %}</dd>
+            </dl>
+        </div>
+    </section>
+{% endblock %}
+
+{% block stylesheets %}
+    <link rel="stylesheet" href="{{ asset('build/charts.css') }}" />
+{% endblock %}
+
+{% block scripts %}
+    <script nonce="{{ csp_nonce('script') }}" src="{{ asset('build/charts.js') }}"></script>
+{% endblock %}
